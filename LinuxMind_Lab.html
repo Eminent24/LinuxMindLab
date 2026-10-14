@@ -1,0 +1,1826 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LinuxMind Lab | Aprende Linux desde Cero</title>
+  <style>
+    :root {
+      --bg-dark: #070b10;
+      --bg-panel: #0d131c;
+      --bg-card: #131c28;
+      --bg-card-hover: #192536;
+      --neon-green: #00ff9d;
+      --neon-cyan: #00e5ff;
+      --neon-purple: #b56bff;
+      --neon-amber: #ffbe0b;
+      --neon-red: #ff3864;
+      --text-main: #e6f1ff;
+      --text-muted: #8b9eb7;
+      --border-color: #1e2d40;
+      --font-mono: 'Fira Code', 'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace;
+      --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(0, 255, 157, 0.04) 0%, transparent 35%),
+        radial-gradient(circle at 90% 80%, rgba(0, 229, 255, 0.04) 0%, transparent 35%),
+        linear-gradient(rgba(0, 255, 157, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 157, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Matrix Canvas Overlay */
+    #matrix-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 9999;
+      display: none;
+      cursor: pointer;
+    }
+
+    #matrix-overlay-msg {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(7, 11, 16, 0.9);
+      border: 1px solid var(--neon-green);
+      color: var(--neon-green);
+      font-family: var(--font-mono);
+      padding: 10px 24px;
+      border-radius: 8px;
+      z-index: 10000;
+      display: none;
+      box-shadow: 0 0 20px rgba(0, 255, 157, 0.4);
+    }
+
+    /* Header & Gamification Bar */
+    header {
+      background: rgba(13, 19, 28, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 14px 24px;
+    }
+
+    .header-container {
+      max-width: 1240px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      background: rgba(0, 255, 157, 0.1);
+      border: 1px solid var(--neon-green);
+      color: var(--neon-green);
+      font-family: var(--font-mono);
+      font-weight: 800;
+      font-size: 1.2rem;
+      padding: 6px 12px;
+      border-radius: 6px;
+      box-shadow: 0 0 12px rgba(0, 255, 157, 0.2);
+      text-shadow: 0 0 8px rgba(0, 255, 157, 0.5);
+    }
+
+    .brand-title h1 {
+      font-family: var(--font-mono);
+      font-size: 1.25rem;
+      letter-spacing: 0.5px;
+      color: var(--text-main);
+    }
+
+    .brand-title span {
+      font-size: 0.78rem;
+      color: var(--neon-cyan);
+      font-family: var(--font-mono);
+      display: block;
+    }
+
+    /* XP & Rank Widget */
+    .xp-widget {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex: 1;
+      max-width: 430px;
+      min-width: 260px;
+    }
+
+    .rank-badge {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--neon-amber);
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .xp-bar-wrap {
+      flex: 1;
+    }
+
+    .xp-bar-labels {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .xp-bar-track {
+      width: 100%;
+      height: 8px;
+      background: #080c11;
+      border-radius: 99px;
+      overflow: hidden;
+      border: 1px solid #1e2d40;
+    }
+
+    .xp-bar-fill {
+      height: 100%;
+      width: 5%;
+      background: linear-gradient(90deg, var(--neon-green), var(--neon-cyan));
+      box-shadow: 0 0 10px var(--neon-green);
+      transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid transparent;
+    }
+
+    .btn-outline {
+      background: rgba(0, 229, 255, 0.08);
+      border-color: var(--neon-cyan);
+      color: var(--neon-cyan);
+    }
+
+    .btn-outline:hover {
+      background: var(--neon-cyan);
+      color: var(--bg-dark);
+      box-shadow: 0 0 14px rgba(0, 229, 255, 0.4);
+    }
+
+    .btn-primary {
+      background: var(--neon-green);
+      color: var(--bg-dark);
+      font-weight: 700;
+    }
+
+    .btn-primary:hover {
+      background: #26ffab;
+      box-shadow: 0 0 16px rgba(0, 255, 157, 0.5);
+      transform: translateY(-1px);
+    }
+
+    /* Navigation Tabs */
+    .nav-tabs {
+      max-width: 1240px;
+      width: 100%;
+      margin: 20px auto 0;
+      padding: 0 24px;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    .tab-btn {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      padding: 12px 18px;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: var(--bg-card);
+    }
+
+    .tab-btn.active {
+      background: var(--bg-card);
+      color: var(--neon-green);
+      border-color: var(--neon-green);
+      border-bottom-color: var(--bg-card);
+      box-shadow: 0 -4px 12px rgba(0, 255, 157, 0.08);
+      font-weight: 700;
+    }
+
+    /* Main Content Container */
+    main {
+      max-width: 1240px;
+      width: 100%;
+      margin: 0 auto 40px;
+      padding: 0 24px;
+      flex: 1;
+    }
+
+    .module-section {
+      display: none;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 0 12px 12px 12px;
+      padding: 28px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    .module-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-header {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .section-header h2 {
+      font-family: var(--font-mono);
+      font-size: 1.5rem;
+      color: var(--neon-green);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-header p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-top: 4px;
+    }
+
+    .xp-pill {
+      background: rgba(0, 255, 157, 0.12);
+      border: 1px solid var(--neon-green);
+      color: var(--neon-green);
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      padding: 4px 10px;
+      border-radius: 99px;
+    }
+
+    /* Grid & Cards */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 20px;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      border-color: var(--neon-cyan);
+      background: var(--bg-card-hover);
+      transform: translateY(-2px);
+    }
+
+    .card.completed-card {
+      border-color: rgba(0, 255, 157, 0.5);
+    }
+
+    .card-badge {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 10px;
+      background: rgba(0, 229, 255, 0.12);
+      color: var(--neon-cyan);
+      border: 1px solid rgba(0, 229, 255, 0.3);
+    }
+
+    .card h3 {
+      font-family: var(--font-mono);
+      font-size: 1.15rem;
+      margin-bottom: 10px;
+      color: var(--text-main);
+    }
+
+    .card p {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      margin-bottom: 14px;
+    }
+
+    .card ul {
+      list-style: none;
+      margin-top: 10px;
+    }
+
+    .card ul li {
+      font-size: 0.88rem;
+      color: var(--text-main);
+      margin-bottom: 8px;
+      padding-left: 18px;
+      position: relative;
+    }
+
+    .card ul li::before {
+      content: '>';
+      position: absolute;
+      left: 0;
+      color: var(--neon-green);
+      font-family: var(--font-mono);
+      font-weight: bold;
+    }
+
+    /* Risk Meter in Module 2 */
+    .risk-bar {
+      margin: 14px 0;
+      background: #080c11;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+
+    .risk-level-low { color: var(--neon-green); }
+    .risk-level-med { color: var(--neon-amber); }
+
+    /* Interactive Simulator Switcher in Module 2 */
+    .method-selector {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .method-btn {
+      flex: 1;
+      min-width: 180px;
+      padding: 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+    }
+
+    .method-btn.active {
+      border-color: var(--neon-green);
+      background: rgba(0, 255, 157, 0.08);
+      box-shadow: 0 0 15px rgba(0, 255, 157, 0.15);
+    }
+
+    /* Module 3: Interactive Anatomy & File System */
+    .anatomy-layout {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    @media (max-width: 820px) {
+      .anatomy-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .layer-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .layer-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-left: 4px solid var(--neon-cyan);
+      padding: 14px 18px;
+      border-radius: 8px;
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .layer-btn:hover, .layer-btn.active {
+      background: rgba(0, 255, 157, 0.1);
+      border-color: var(--neon-green);
+      border-left-width: 6px;
+      color: var(--neon-green);
+    }
+
+    .inspector-box {
+      background: #080c12;
+      border: 1px solid var(--neon-cyan);
+      border-radius: 10px;
+      padding: 24px;
+      font-family: var(--font-sans);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .inspector-box h3 {
+      font-family: var(--font-mono);
+      color: var(--neon-cyan);
+      font-size: 1.25rem;
+      margin-bottom: 10px;
+    }
+
+    .analogy-box {
+      margin-top: 16px;
+      background: rgba(0, 255, 157, 0.06);
+      border-left: 3px solid var(--neon-green);
+      padding: 12px 16px;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.9rem;
+    }
+
+    /* File Tree Explorer */
+    .fs-tree {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .folder-chip {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .folder-chip:hover, .folder-chip.active {
+      background: var(--neon-green);
+      color: var(--bg-dark);
+      border-color: var(--neon-green);
+      font-weight: 700;
+    }
+
+    /* Module 4: Distro Recommender & Catalog */
+    .wizard-box {
+      background: linear-gradient(145deg, #101926, #0a1018);
+      border: 1px solid var(--neon-cyan);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 32px;
+    }
+
+    .wizard-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .wizard-opt {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      font-size: 0.92rem;
+      text-align: left;
+      transition: all 0.2s;
+    }
+
+    .wizard-opt:hover {
+      border-color: var(--neon-green);
+      background: rgba(0, 255, 157, 0.08);
+    }
+
+    /* Module 5: Interactive Terminal Simulator */
+    .terminal-window {
+      background: #05080c;
+      border: 1px solid #263850;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+    }
+
+    .terminal-topbar {
+      background: #131c28;
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #263850;
+    }
+
+    .terminal-dots {
+      display: flex;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .dot-red { background: #ff5f56; }
+    .dot-yellow { background: #ffbd2e; }
+    .dot-green { background: #27c93f; }
+
+    .terminal-title {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .terminal-body {
+      padding: 20px;
+      height: 410px;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .term-line {
+      margin-bottom: 6px;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+
+    .term-prompt {
+      color: var(--neon-green);
+      font-weight: 700;
+    }
+
+    .term-path {
+      color: var(--neon-cyan);
+      font-weight: 700;
+    }
+
+    .term-input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    #term-input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: 0.92rem;
+      flex: 1;
+      caret-color: var(--neon-green);
+    }
+
+    .quick-cmds {
+      margin-bottom: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .cmd-chip {
+      background: rgba(0, 255, 157, 0.08);
+      border: 1px solid rgba(0, 255, 157, 0.35);
+      color: var(--neon-green);
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      padding: 5px 11px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .cmd-chip:hover {
+      background: var(--neon-green);
+      color: var(--bg-dark);
+      font-weight: 700;
+    }
+
+    .cmd-chip.easter {
+      border-color: var(--neon-purple);
+      color: var(--neon-purple);
+      background: rgba(181, 107, 255, 0.08);
+    }
+
+    .cmd-chip.easter:hover {
+      background: var(--neon-purple);
+      color: var(--bg-dark);
+    }
+
+    /* Quiz Styling */
+    .quiz-option {
+      width: 100%;
+      text-align: left;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 14px 18px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      transition: all 0.2s;
+    }
+
+    .quiz-option:hover:not(:disabled) {
+      border-color: var(--neon-cyan);
+      background: var(--bg-card-hover);
+    }
+
+    .quiz-option.correct {
+      border-color: var(--neon-green);
+      background: rgba(0, 255, 157, 0.15);
+      color: var(--neon-green);
+      font-weight: 600;
+    }
+
+    .quiz-option.wrong {
+      border-color: var(--neon-red);
+      background: rgba(255, 56, 100, 0.15);
+      color: var(--neon-red);
+    }
+
+    /* Toast Notification for XP */
+    #xp-toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: rgba(13, 19, 28, 0.96);
+      border: 1px solid var(--neon-green);
+      color: var(--neon-green);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      padding: 12px 18px;
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgba(0, 255, 157, 0.3);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 2000;
+    }
+
+    #xp-toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Footer */
+    footer {
+      background: var(--bg-panel);
+      border-top: 1px solid var(--border-color);
+      padding: 24px;
+      margin-top: auto;
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    footer a {
+      color: var(--neon-cyan);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Matrix Easter Egg Canvas -->
+  <canvas id="matrix-canvas"></canvas>
+  <div id="matrix-overlay-msg">[MATRIX MODE ACTIVO] Haz clic en cualquier parte para volver al laboratorio</div>
+
+  <!-- XP Notification Toast -->
+  <div id="xp-toast">+25 XP | ¡Progreso desbloqueado!</div>
+
+  <!-- Top Header -->
+  <header>
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-logo">&gt;_</div>
+        <div class="brand-title">
+          <h1>LinuxMind Lab</h1>
+          <span>Desarrollado por Eminent24 | The CyberMind Lab</span>
+        </div>
+      </div>
+
+      <!-- Gamification Bar -->
+      <div class="xp-widget">
+        <div class="rank-badge" id="rank-display">🛡️ Novato Curioso</div>
+        <div class="xp-bar-wrap">
+          <div class="xp-bar-labels">
+            <span id="level-label">Nivel 1</span>
+            <span id="xp-counter">0 / 300 XP</span>
+          </div>
+          <div class="xp-bar-track">
+            <div class="xp-bar-fill" id="xp-bar-fill"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="header-actions">
+        <a href="https://github.com/Eminent24" target="_blank" rel="noopener noreferrer" class="btn btn-outline" title="Espacio para tu perfil de GitHub">
+          <span>⚡ GitHub</span>
+        </a>
+        <button class="btn btn-primary" onclick="downloadOfflineApp()">
+          ⬇ Descargar App (.html)
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('tab-intro', this)">01 // ¿Qué es Linux?</button>
+    <button class="tab-btn" onclick="switchTab('tab-probar', this)">02 // Probar sin Miedo</button>
+    <button class="tab-btn" onclick="switchTab('tab-anatomia', this)">03 // Anatomía Interactiva</button>
+    <button class="tab-btn" onclick="switchTab('tab-distros', this)">04 // Distros + Recomendador</button>
+    <button class="tab-btn" onclick="switchTab('tab-terminal', this)">05 // Simulador Terminal</button>
+    <button class="tab-btn" onclick="switchTab('tab-quiz', this)">06 // Desafío Final</button>
+  </nav>
+
+  <!-- Main Content -->
+  <main>
+
+    <!-- MÓDULO 1: ¿QUÉ ES LINUX? -->
+    <section id="tab-intro" class="module-section active">
+      <div class="section-header">
+        <div>
+          <h2>&gt;_ 01. ¿Qué es Linux y por qué importa?</h2>
+          <p>La base para entender el sistema que mueve internet, servidores, supercomputadoras y la ciberseguridad mundial.</p>
+        </div>
+        <span class="xp-pill">Haz clic en las tarjetas para ganar XP</span>
+      </div>
+
+      <div class="grid-3">
+        <div class="card" onclick="claimXP('intro-1', 20, 'Concepto Base desbloqueado', this)">
+          <span class="card-badge">Concepto Clave</span>
+          <h3>🐧 No es solo un programa, es un Sistema Operativo</h3>
+          <p>Igual que Windows o macOS, <strong>GNU/Linux</strong> es el software principal que administra el hardware de tu computadora (procesador, memoria RAM, pantalla y discos).</p>
+          <ul>
+            <li>Creado originalmente por <strong>Linus Torvalds</strong> en 1991.</li>
+            <li>Es <strong>Código Abierto (Open Source)</strong>: cualquiera puede auditar cómo está hecho.</li>
+            <li>Es 100% gratuito y no requiere licencias ni activadores.</li>
+          </ul>
+        </div>
+
+        <div class="card" onclick="claimXP('intro-2', 20, 'Mitos derribados', this)">
+          <span class="card-badge">Mito vs. Realidad</span>
+          <h3>🖥️ ¿Solo se usa escribiendo comandos? ¡Falso!</h3>
+          <p>En el cine siempre muestran pantallas negras llenas de letras, pero el Linux moderno tiene interfaces gráficas tan fáciles y atractivas como Windows o Mac.</p>
+          <ul>
+            <li>Incluye tienda de aplicaciones con un clic (navegadores, Spotify, Steam, LibreOffice).</li>
+            <li>La <strong>Terminal</strong> es opcional para el usuario común, pero te da superpoderes si decides aprenderla.</li>
+            <li>Revive computadoras antiguas consumiendo menos de 1 GB de RAM.</li>
+          </ul>
+        </div>
+
+        <div class="card" onclick="claimXP('intro-3', 20, 'Privacidad y Seguridad', this)">
+          <span class="card-badge">Ciberseguridad</span>
+          <h3>🔒 Privacidad Real y Control Total</h3>
+          <p>A diferencia de otros sistemas comerciales, Linux no recopila telemetría oculta, no te obliga a reiniciar mientras trabajas ni instala publicidad en tu menú de inicio.</p>
+          <ul>
+            <li>Sistema estricto de permisos: ningún programa puede tocar el sistema sin tu autorización (<code>sudo</code>).</li>
+            <li>Los virus de Windows (<code>.exe</code>) no funcionan de forma nativa en Linux.</li>
+            <li>Es la plataforma estándar para <strong>hacking ético, auditoría y servidores</strong>.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- MÓDULO 2: CÓMO PROBARLO SIN MIEDO -->
+    <section id="tab-probar" class="module-section">
+      <div class="section-header">
+        <div>
+          <h2>&gt;_ 02. Cómo probar Linux sin borrar ni romper tu PC</h2>
+          <p>No necesitas desinstalar Windows para experimentar. Explora los 3 métodos seguros según tu nivel de confianza.</p>
+        </div>
+        <span class="xp-pill">+25 XP por método explorado</span>
+      </div>
+
+      <div class="method-selector">
+        <button class="method-btn active" onclick="selectMethod('liveusb', this)">
+          <strong>1. Live USB (Modo Prueba)</strong><br>
+          <small style="color:var(--neon-green)">Riesgo: 0% • Sin instalar nada</small>
+        </button>
+        <button class="method-btn" onclick="selectMethod('vm', this)">
+          <strong>2. Máquina Virtual (VM)</strong><br>
+          <small style="color:var(--neon-cyan)">Riesgo: 0% • Dentro de Windows</small>
+        </button>
+        <button class="method-btn" onclick="selectMethod('dualboot', this)">
+          <strong>3. Dual Boot (Doble Arranque)</strong><br>
+          <small style="color:var(--neon-amber)">Riesgo: Medio • 100% Rendimiento</small>
+        </button>
+      </div>
+
+      <div id="method-detail-box" class="inspector-box">
+        <!-- Renderizado dinámicamente por JS -->
+      </div>
+    </section>
+
+    <!-- MÓDULO 3: ANATOMÍA INTERACTIVA -->
+    <section id="tab-anatomia" class="module-section">
+      <div class="section-header">
+        <div>
+          <h2>&gt;_ 03. Anatomía Interactiva del Sistema</h2>
+          <p>Haz clic en cada capa de la arquitectura y en cada carpeta del sistema para entender cómo funciona Linux por dentro.</p>
+        </div>
+        <span class="xp-pill">Interactivo • Gana XP explorando</span>
+      </div>
+
+      <h3 style="font-family:var(--font-mono); margin-bottom:14px; color:var(--neon-cyan);">A) Las 4 Capas de Linux (Haz clic en cada nivel)</h3>
+      <div class="anatomy-layout">
+        <div class="layer-stack">
+          <button class="layer-btn active" onclick="showLayer('kernel', this)">
+            <span>01. El Kernel (Núcleo Linux)</span>
+            <span>⚙️</span>
+          </button>
+          <button class="layer-btn" onclick="showLayer('shell', this)">
+            <span>02. La Shell (Intérprete Bash / Zsh)</span>
+            <span>💻</span>
+          </button>
+          <button class="layer-btn" onclick="showLayer('de', this)">
+            <span>03. Entorno de Escritorio (GUI)</span>
+            <span>🖼️</span>
+          </button>
+          <button class="layer-btn" onclick="showLayer('pkg', this)">
+            <span>04. Gestor de Paquetes y Apps</span>
+            <span>📦</span>
+          </button>
+        </div>
+
+        <div class="inspector-box" id="layer-inspector">
+          <!-- Renderizado por JS -->
+        </div>
+      </div>
+
+      <h3 style="font-family:var(--font-mono); margin-bottom:14px; color:var(--neon-cyan);">B) El Sistema de Archivos: ¿Dónde está el disco C:\ en Linux?</h3>
+      <p style="color:var(--text-muted); margin-bottom:14px; font-size:0.92rem;">
+        En Windows todo empieza en <code>C:\</code>. En Linux no existen letras para los discos: todo nace de una única carpeta maestra llamada <strong>Raíz (<code>/</code>)</strong>. Haz clic en cada carpeta para inspeccionarla:
+      </p>
+
+      <div class="fs-tree">
+        <button class="folder-chip active" onclick="showFolder('root_slash', this)">/ (Raíz)</button>
+        <button class="folder-chip" onclick="showFolder('home', this)">/home</button>
+        <button class="folder-chip" onclick="showFolder('etc', this)">/etc</button>
+        <button class="folder-chip" onclick="showFolder('bin', this)">/bin y /usr/bin</button>
+        <button class="folder-chip" onclick="showFolder('root_user', this)">/root</button>
+        <button class="folder-chip" onclick="showFolder('var', this)">/var</button>
+        <button class="folder-chip" onclick="showFolder('dev', this)">/dev</button>
+      </div>
+
+      <div class="inspector-box" id="folder-inspector">
+        <!-- Renderizado por JS -->
+      </div>
+    </section>
+
+    <!-- MÓDULO 4: DISTROS + RECOMENDADOR -->
+    <section id="tab-distros" class="module-section">
+      <div class="section-header">
+        <div>
+          <h2>&gt;_ 04. ¿Qué es una "Distro" y cuál deberías elegir?</h2>
+          <p>Como Linux es libre, existen distintas versiones ("Distribuciones" o Distros) armadas para diferentes objetivos.</p>
+        </div>
+        <span class="xp-pill">+40 XP al completar el test</span>
+      </div>
+
+      <!-- Test Recomendador -->
+      <div class="wizard-box" id="distro-wizard">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <h3 style="font-family:var(--font-mono); color:var(--neon-green);">🧭 Test Interactivo: Encuentra tu Distro Ideal</h3>
+          <button class="btn btn-outline" onclick="resetWizard()" style="padding:4px 10px; font-size:0.75rem;">Reiniciar Test</button>
+        </div>
+        <div id="wizard-content" style="margin-top:14px;">
+          <!-- Cargado dinámicamente -->
+        </div>
+      </div>
+
+      <h3 style="font-family:var(--font-mono); margin-bottom:16px; color:var(--neon-cyan);">Catálogo de Distribuciones Esenciales</h3>
+      <div class="grid-3">
+        <div class="card">
+          <span class="card-badge">Principiantes / Diario</span>
+          <h3>🌿 Linux Mint</h3>
+          <p>La mejor puerta de entrada si vienes de Windows. Su escritorio <strong>Cinnamon</strong> tiene barra de tareas y menú de inicio clásicos.</p>
+          <ul>
+            <li><strong>Dificultad:</strong> Muy Fácil</li>
+            <li><strong>Ideal para:</strong> Uso diario, estudio, oficina y migrar desde Windows sin curva de aprendizaje.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <span class="card-badge">Estándar / Comunidad</span>
+          <h3>🟠 Ubuntu</h3>
+          <p>La distribución más famosa del mundo. Cualquier tutorial o programa para Linux está probado primero en Ubuntu.</p>
+          <ul>
+            <li><strong>Dificultad:</strong> Fácil</li>
+            <li><strong>Ideal para:</strong> Programadores, estudiantes y quienes buscan soporte masivo.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <span class="card-badge">Ciberseguridad / Auditoría</span>
+          <h3>🐉 Kali Linux</h3>
+          <p>El laboratorio suizo para <strong>Pentesting y Auditoría de Seguridad</strong>. Incluye más de 600 herramientas preinstaladas (Nmap, Wireshark, Metasploit).</p>
+          <ul>
+            <li><strong>Dificultad:</strong> Intermedia / Avanzada</li>
+            <li><strong>Ideal para:</strong> Estudiantes de ciberseguridad (ideal usarla en Máquina Virtual o Live USB).</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <span class="card-badge">Estabilidad Absoluta</span>
+          <h3>🌀 Debian</h3>
+          <p>La roca madre sobre la que se construyen Ubuntu, Mint y Kali. Extremadamente estable, limpia y confiable para servidores y estaciones de trabajo.</p>
+          <ul>
+            <li><strong>Dificultad:</strong> Intermedia</li>
+            <li><strong>Ideal para:</strong> Servidores, entusiastas de la estabilidad y el software libre puro.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <span class="card-badge">Innovación / Desarrollo</span>
+          <h3>🎩 Fedora Workstation</h3>
+          <p>Respaldada por Red Hat. Siempre tiene las últimas versiones del Kernel y tecnologías modernas sin perder estabilidad.</p>
+          <ul>
+            <li><strong>Dificultad:</strong> Fácil / Intermedia</li>
+            <li><strong>Ideal para:</strong> Desarrolladores de software, ingeniería y hardware muy reciente.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <span class="card-badge">Control Total / DIY</span>
+          <h3>🏔️ Arch Linux</h3>
+          <p>Empiezas desde una pantalla negra y construyes tu sistema pieza por pieza. Si logras instalar Arch, entiendes cómo funciona Linux por completo.</p>
+          <ul>
+            <li><strong>Dificultad:</strong> Avanzada</li>
+            <li><strong>Ideal para:</strong> Aprender a fondo la arquitectura interna de Linux y personalización extrema.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- MÓDULO 5: SIMULADOR DE TERMINAL + EASTER EGGS -->
+    <section id="tab-terminal" class="module-section">
+      <div class="section-header">
+        <div>
+          <h2>&gt;_ 05. Simulador de Terminal + Easter Eggs</h2>
+          <p>Practica comandos reales de Linux sin miedo a romper nada. Escribe en la consola o presiona los botones rápidos.</p>
+        </div>
+        <span class="xp-pill">+10 XP por cada comando nuevo</span>
+      </div>
+
+      <div class="quick-cmds">
+        <span style="font-family:var(--font-mono); font-size:0.8rem; color:var(--text-muted);">Comandos Básicos:</span>
+        <button class="cmd-chip" onclick="runQuickCmd('help')">help</button>
+        <button class="cmd-chip" onclick="runQuickCmd('ls')">ls</button>
+        <button class="cmd-chip" onclick="runQuickCmd('pwd')">pwd</button>
+        <button class="cmd-chip" onclick="runQuickCmd('whoami')">whoami</button>
+        <button class="cmd-chip" onclick="runQuickCmd('cat bienvenida.txt')">cat bienvenida.txt</button>
+        <button class="cmd-chip" onclick="runQuickCmd('uname -a')">uname -a</button>
+        <button class="cmd-chip" onclick="runQuickCmd('sudo apt update')">sudo apt update</button>
+        <button class="cmd-chip" onclick="runQuickCmd('puertos')">puertos</button>
+        <button class="cmd-chip" onclick="runQuickCmd('clear')">clear</button>
+      </div>
+
+      <div class="quick-cmds" style="margin-bottom:20px;">
+        <span style="font-family:var(--font-mono); font-size:0.8rem; color:var(--neon-purple);">Easter Eggs Secretos:</span>
+        <button class="cmd-chip easter" onclick="runQuickCmd('neofetch')">neofetch</button>
+        <button class="cmd-chip easter" onclick="runQuickCmd('matrix')">matrix</button>
+        <button class="cmd-chip easter" onclick="runQuickCmd('hack')">hack</button>
+        <button class="cmd-chip easter" onclick="runQuickCmd('credits')">credits</button>
+        <button class="cmd-chip easter" onclick="runQuickCmd('tux')">tux</button>
+        <button class="cmd-chip easter" onclick="runQuickCmd('sudo rm -rf /')">sudo rm -rf /</button>
+      </div>
+
+      <div class="terminal-window" onclick="document.getElementById('term-input').focus()">
+        <div class="terminal-topbar">
+          <div class="terminal-dots">
+            <div class="dot dot-red"></div>
+            <div class="dot dot-yellow"></div>
+            <div class="dot dot-green"></div>
+          </div>
+          <div class="terminal-title">eminent24@linuxmind-lab: ~ (bash)</div>
+          <div style="font-family:var(--font-mono); font-size:0.75rem; color:var(--neon-green);">ONLINE</div>
+        </div>
+        <div class="terminal-body" id="terminal-output">
+          <div class="term-line" style="color:var(--neon-cyan);">====================================================================</div>
+          <div class="term-line" style="color:var(--neon-green); font-weight:bold;">  Bienvenido a LinuxMind Lab OS v1.0 (Desarrollado por Eminent24)</div>
+          <div class="term-line" style="color:var(--neon-cyan);">====================================================================</div>
+          <div class="term-line">Escribe <span style="color:var(--neon-amber)">help</span> para ver la lista de comandos o usa los botones de arriba.</div>
+          <div class="term-line">Prueba también los Easter Eggs como <span style="color:var(--neon-purple)">neofetch</span>, <span style="color:var(--neon-purple)">matrix</span> o <span style="color:var(--neon-purple)">hack</span>.</div>
+          <br>
+        </div>
+        <div style="padding: 0 20px 18px; background:#05080c;">
+          <div class="term-input-row">
+            <span class="term-prompt">eminent24@linuxmind</span>:<span class="term-path" id="term-cwd">~</span>$
+            <input type="text" id="term-input" placeholder="Escribe un comando aquí y presiona Enter..." autocomplete="off" spellcheck="false" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MÓDULO 6: DESAFÍO FINAL (QUIZ) -->
+    <section id="tab-quiz" class="module-section">
+      <div class="section-header">
+        <div>
+          <h2>&gt;_ 06. Desafío Final: Certifica tu Rango</h2>
+          <p>Demuestra lo que aprendiste en LinuxMind Lab y desbloquea el rango máximo de <strong>Maestro del Kernel / SysAdmin</strong>.</p>
+        </div>
+        <span class="xp-pill">+25 XP por respuesta correcta</span>
+      </div>
+
+      <div id="quiz-container" class="inspector-box" style="max-width:780px; margin:0 auto;">
+        <!-- Cargado dinámicamente -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer Credits -->
+  <footer>
+    <p>
+      <strong>LinuxMind Lab</strong> — Desarrollado por <span style="color:var(--neon-green); font-weight:bold;">Eminent24 | The CyberMind Lab</span>
+    </p>
+    <p style="margin-top:6px; font-size:0.78rem;">
+      Código Abierto Educativo • Listo para usar Offline o compartir en <a href="https://github.com/Eminent24" target="_blank" rel="noopener noreferrer">GitHub</a> y Reddit.
+    </p>
+  </footer>
+
+  <script>
+    // ==========================================
+    // 1. SISTEMA DE GAMIFICACIÓN (XP Y RANGOS)
+    // ==========================================
+    let userXP = 0;
+    const maxXP = 300;
+    const claimedActions = new Set();
+
+    const ranks = [
+      { min: 0, title: "🛡️ Novato Curioso", level: "Nivel 1" },
+      { min: 60, title: "💿 Explorador Live USB", level: "Nivel 2" },
+      { min: 130, title: "💻 Aprendiz de Bash", level: "Nivel 3" },
+      { min: 210, title: "🐧 Domador de Pingüinos", level: "Nivel 4" },
+      { min: 280, title: "👑 Maestro del Kernel / SysAdmin", level: "Nivel MAX" }
+    ];
+
+    function claimXP(actionId, amount, reason, cardEl = null) {
+      if (cardEl) cardEl.classList.add('completed-card');
+      if (claimedActions.has(actionId)) return;
+      claimedActions.add(actionId);
+      userXP += amount;
+      updateXPUI(amount, reason);
+    }
+
+    function updateXPUI(gained, reason) {
+      const pct = Math.min(100, Math.max(5, Math.round((userXP / maxXP) * 100)));
+      document.getElementById('xp-bar-fill').style.width = pct + '%';
+      document.getElementById('xp-counter').textContent = `${userXP} / ${maxXP} XP`;
+
+      let currentRank = ranks[0];
+      for (const r of ranks) {
+        if (userXP >= r.min) currentRank = r;
+      }
+      document.getElementById('rank-display').textContent = currentRank.title;
+      document.getElementById('level-label').textContent = currentRank.level;
+
+      const toast = document.getElementById('xp-toast');
+      toast.textContent = `+${gained} XP // ${reason}`;
+      toast.classList.add('show');
+      clearTimeout(window.xpToastTimer);
+      window.xpToastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+    }
+
+    // ==========================================
+    // 2. NAVEGACIÓN ENTRE PESTAÑAS
+    // ==========================================
+    function switchTab(tabId, btnEl) {
+      document.querySelectorAll('.module-section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      btnEl.classList.add('active');
+      if (tabId === 'tab-terminal') {
+        setTimeout(() => document.getElementById('term-input').focus(), 100);
+      }
+    }
+
+    // ==========================================
+    // 3. MÓDULO 2: MÉTODOS PARA PROBAR SIN MIEDO
+    // ==========================================
+    const methodsData = {
+      liveusb: {
+        title: "1. Live USB (Probar desde una memoria USB sin instalar)",
+        risk: "0% (Tu disco duro de Windows ni siquiera se modifica)",
+        riskClass: "risk-level-low",
+        desc: "Grabas la imagen ISO de Linux (como Linux Mint o Ubuntu) en una memoria USB usando programas gratuitos como <strong>Ventoy</strong> o <strong>Rufus</strong>. Al encender tu PC desde el USB, Linux corre directamente en la memoria RAM.",
+        steps: [
+          "Descargas el archivo .ISO de tu distribución favorita.",
+          "Usas Ventoy o Rufus para preparar tu memoria USB (8 GB o más).",
+          "Reinicias tu PC y entras al menú de arranque (F12 / F11 / Esc).",
+          "Pruebas Linux completo: navegas por internet, abres la terminal y cuando apagas y sacas el USB, tu Windows sigue intacto."
+        ]
+      },
+      vm: {
+        title: "2. Máquina Virtual (Linux como una ventana dentro de Windows)",
+        risk: "0% (Es una computadora simulada y aislada dentro de tu sistema actual)",
+        riskClass: "risk-level-low",
+        desc: "Instalas un programa gratuito como <strong>VirtualBox</strong> o <strong>VMware Workstation Player</strong> en Windows. Creas una 'PC virtual' y le instalas Linux adentro como si fuera un videojuego o una app más.",
+        steps: [
+          "Ideal para laboratorios de Ciberseguridad (como Kali Linux) y practicar sin miedo.",
+          "Si rompes el sistema haciendo pruebas o ejecutando comandos, restauras una 'Snapshot' (punto de guardado) en 5 segundos.",
+          "Requiere al menos 8 GB de RAM en tu computadora real para asignar 2 o 4 GB a la máquina virtual."
+        ]
+      },
+      dualboot: {
+        title: "3. Dual Boot (Windows y Linux conviviendo en el mismo disco)",
+        risk: "Medio (Requiere dividir el espacio de tu disco con cuidado)",
+        riskClass: "risk-level-med",
+        desc: "Instalas Linux en una partición real de tu disco SSD junto a Windows. Cada vez que enciendes la computadora, un menú (llamado <strong>GRUB</strong>) te pregunta si hoy quieres iniciar en Windows o en Linux.",
+        steps: [
+          "Aprovecha el 100% de la velocidad de tu procesador, tarjeta gráfica y memoria RAM.",
+          "Ideal cuando ya probaste Linux en USB o Máquina Virtual y quieres usarlo a máxima potencia.",
+          "Instaladores como Linux Mint o Ubuntu incluyen la opción automática 'Instalar junto a Windows'."
+        ]
+      }
+    };
+
+    function selectMethod(key, btnEl) {
+      if (btnEl) {
+        document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
+        btnEl.classList.add('active');
+      }
+      const m = methodsData[key];
+      const box = document.getElementById('method-detail-box');
+      box.innerHTML = `
+        <h3>${m.title}</h3>
+        <div class="risk-bar">Nivel de Riesgo para tus archivos: <strong class="${m.riskClass}">${m.risk}</strong></div>
+        <p style="color:var(--text-main); margin-bottom:12px;">${m.desc}</p>
+        <ul style="list-style:none;">
+          ${m.steps.map(s => `<li style="margin-bottom:8px; color:var(--text-muted);">⚡ ${s}</li>`).join('')}
+        </ul>
+      `;
+      claimXP('method-' + key, 25, 'Método de instalación explorado');
+    }
+
+    // ==========================================
+    // 4. MÓDULO 3: ANATOMÍA Y SISTEMA DE ARCHIVOS
+    // ==========================================
+    const layersData = {
+      kernel: {
+        title: "01. El Kernel (El corazón del sistema)",
+        desc: "El Kernel es el puente directo entre el hardware físico (CPU, memoria RAM, tarjeta de red) y los programas. Administra qué proceso usa memoria y protege el sistema.",
+        analogy: "🚗 Analogía: Si tu computadora fuera un auto deportivo, el Kernel sería el motor y la transmisión."
+      },
+      shell: {
+        title: "02. La Shell (Bash / Zsh - El traductor de órdenes)",
+        desc: "La Shell es el programa que recibe los comandos que escribes en la Terminal (como 'ls' o 'mkdir'), los traduce y le pide al Kernel que los ejecute al instante.",
+        analogy: "🎙️ Analogía: Es como hablar directamente con la torre de control sin intermediarios."
+      },
+      de: {
+        title: "03. Entorno de Escritorio (Cinnamon, KDE Plasma, GNOME)",
+        desc: "Es toda la parte visual: ventanas, barra de tareas, iconos, fondos de pantalla y menús. En Linux puedes cambiar tu Entorno de Escritorio cuando quieras sin cambiar de sistema.",
+        analogy: "🎨 Analogía: Es la carrocería, el tablero digital y los asientos del auto. Tú eliges si lo quieres clásico como Windows (Cinnamon/KDE) o minimalista (GNOME)."
+      },
+      pkg: {
+        title: "04. Gestor de Paquetes (apt, dnf, pacman, flatpak)",
+        desc: "En Windows buscas instaladores '.exe' por páginas web (con riesgo de descargar malware). En Linux descargas todo desde repositorios oficiales verificados con un clic o un comando ('sudo apt install firefox').",
+        analogy: "🛡️ Analogía: Una tienda oficial blindada que instala y actualiza todos tus programas de un solo golpe."
+      }
+    };
+
+    function showLayer(key, btnEl) {
+      if (btnEl) {
+        document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
+        btnEl.classList.add('active');
+      }
+      const l = layersData[key];
+      document.getElementById('layer-inspector').innerHTML = `
+        <h3>${l.title}</h3>
+        <p style="color:var(--text-main);">${l.desc}</p>
+        <div class="analogy-box">${l.analogy}</div>
+      `;
+      claimXP('layer-' + key, 15, 'Capa de arquitectura inspeccionada');
+    }
+
+    const foldersData = {
+      root_slash: {
+        path: "/ (Directorio Raíz)",
+        winEq: "Equivalente en Windows: C:\",
+        desc: "Es el tronco del árbol. Todas las demás carpetas, e incluso las memorias USB o discos secundarios que conectes, cuelgan dentro de '/'."
+      },
+      home: {
+        path: "/home (Carpetas Personales)",
+        winEq: "Equivalente en Windows: C:\Usuarios\TuNombre",
+        desc: "Aquí viven tus documentos, descargas, fotos y configuraciones personales (por ejemplo: '/home/eminent24'). Cada usuario tiene su propia carpeta aquí."
+      },
+      etc: {
+        path: "/etc (Configuraciones del Sistema)",
+        winEq: "Equivalente en Windows: El Registro de Windows (Regedit)",
+        desc: "En Linux todas las configuraciones del sistema, redes y servidores son simples archivos de texto dentro de '/etc' que puedes editar o respaldar fácilmente."
+      },
+      bin: {
+        path: "/bin y /usr/bin (Programas y Comandos)",
+        winEq: "Equivalente en Windows: C:\Archivos de Programa y System32",
+        desc: "Aquí se guardan los programas ejecutables del sistema, desde comandos básicos como 'ls' y 'cat' hasta tu navegador web."
+      },
+      root_user: {
+        path: "/root (Carpeta del Superusuario)",
+        winEq: "Equivalente en Windows: Carpeta privada del Administrador Supremo",
+        desc: "Es la carpeta personal exclusiva del usuario 'root' (el administrador con poder absoluto sobre el sistema). No debe confundirse con '/'."
+      },
+      var: {
+        path: "/var (Datos Variables y Registros/Logs)",
+        winEq: "Equivalente en Windows: Visor de Eventos / ProgramData",
+        desc: "Guarda archivos que cambian constantemente mientras el sistema funciona: registros de seguridad ('/var/log'), bases de datos y páginas web si montas un servidor."
+      },
+      dev: {
+        path: "/dev (Dispositivos de Hardware)",
+        winEq: "Equivalente en Windows: Administrador de Dispositivos",
+        desc: "En Linux 'todo es un archivo'. Tus discos duros ('/dev/sda'), tu cámara web y tu teclado aparecen representados aquí como archivos."
+      }
+    };
+
+    function showFolder(key, btnEl) {
+      if (btnEl) {
+        document.querySelectorAll('.folder-chip').forEach(b => b.classList.remove('active'));
+        btnEl.classList.add('active');
+      }
+      const f = foldersData[key];
+      document.getElementById('folder-inspector').innerHTML = `
+        <h3>📁 ${f.path}</h3>
+        <div style="font-family:var(--font-mono); font-size:0.85rem; color:var(--neon-amber); margin-bottom:10px;">${f.winEq}</div>
+        <p style="color:var(--text-main);">${f.desc}</p>
+      `;
+      claimXP('folder-' + key, 10, 'Directorio de Linux explorado');
+    }
+
+    // ==========================================
+    // 5. MÓDULO 4: TEST RECOMENDADOR DE DISTROS
+    // ==========================================
+    const wizardSteps = [
+      {
+        q: "Pregunta 1/3: ¿Cuál es tu experiencia actual con Linux?",
+        opts: [
+          { text: "Cero absoluto, siempre he usado Windows o Mac.", tag: "beginner" },
+          { text: "He visto videos o usado algún comando básico.", tag: "intermediate" },
+          { text: "Quiero retos técnicos, ciberseguridad o control total.", tag: "advanced" }
+        ]
+      },
+      {
+        q: "Pregunta 2/3: ¿Para qué quieres usar principalmente Linux?",
+        opts: [
+          { text: "Uso diario, universidad, programación, juegos y comodidad.", tag: "daily" },
+          { text: "Aprender Ciberseguridad, Hacking Ético y Redes.", tag: "security" },
+          { text: "Entender el sistema a fondo o revivir una PC con pocos recursos.", tag: "tinker" }
+        ]
+      },
+      {
+        q: "Pregunta 3/3: ¿Qué diseño visual te hace sentir más cómodo?",
+        opts: [
+          { text: "Familiar y parecido a Windows (barra abajo y menú clásico).", tag: "winlike" },
+          { text: "Moderno y diferente (estilo panel limpio).", tag: "modern" },
+          { text: "Enfocado en herramientas técnicas y terminal hacker.", tag: "hacker" }
+        ]
+      }
+    ];
+
+    let wizardAnswers = [];
+
+    function renderWizard() {
+      const container = document.getElementById('wizard-content');
+      const stepIdx = wizardAnswers.length;
+      if (stepIdx < wizardSteps.length) {
+        const s = wizardSteps[stepIdx];
+        container.innerHTML = `
+          <p style="font-family:var(--font-mono); color:var(--text-main); font-size:1rem;">${s.q}</p>
+          <div class="wizard-options">
+            ${s.opts.map(o => `<button class="wizard-opt" onclick="answerWizard('${o.tag}')">▸ ${o.text}</button>`).join('')}
+          </div>
+        `;
+      } else {
+        let distro = "Linux Mint (Edición Cinnamon)";
+        let why = "Porque ofrece la transición más suave desde Windows: incluye todo listo desde el primer minuto, es súper estable y muy amigable para aprender.";
+        if (wizardAnswers.includes('security') || wizardAnswers.includes('hacker')) {
+          distro = "Linux Mint (Sistema Principal) + Kali Linux (en Máquina Virtual)";
+          why = "Para ciberseguridad y auditoría, la combinación profesional ideal es tener una distro cómoda y estable como Linux Mint o Ubuntu para tu día a día, y correr Kali Linux dentro de VirtualBox para tus laboratorios de hacking ético.";
+        } else if (wizardAnswers.includes('modern')) {
+          distro = "Ubuntu o Fedora Workstation";
+          why = "Tienen un escritorio moderno y pulido, excelente soporte de hardware y la mayor comunidad de desarrolladores del mundo.";
+        }
+
+        container.innerHTML = `
+          <div style="background:rgba(0,255,157,0.08); border:1px solid var(--neon-green); padding:18px; border-radius:8px;">
+            <div style="font-family:var(--font-mono); color:var(--neon-cyan); font-size:0.85rem;">RESULTADO PERSONALIZADO:</div>
+            <h4 style="font-family:var(--font-mono); color:var(--neon-green); font-size:1.3rem; margin:6px 0;">🏆 ${distro}</h4>
+            <p style="color:var(--text-main); font-size:0.95rem;">${why}</p>
+          </div>
+        `;
+        claimXP('distro-wizard-done', 40, 'Test de Distros completado');
+      }
+    }
+
+    function answerWizard(tag) {
+      wizardAnswers.push(tag);
+      renderWizard();
+    }
+
+    function resetWizard() {
+      wizardAnswers = [];
+      renderWizard();
+    }
+
+    // ==========================================
+    // 6. MÓDULO 5: SIMULADOR DE TERMINAL + EASTER EGGS
+    // ==========================================
+    const termOutput = document.getElementById('terminal-output');
+    const termInput = document.getElementById('term-input');
+    let cmdHistory = [];
+    let historyIdx = -1;
+    let virtualFiles = ['bienvenida.txt', 'secreto_cybermind.txt', 'notas_linux.md', 'proyectos/'];
+
+    function printTerm(html, color = 'var(--text-main)') {
+      const div = document.createElement('div');
+      div.className = 'term-line';
+      div.style.color = color;
+      div.innerHTML = html;
+      termOutput.appendChild(div);
+      termOutput.scrollTop = termOutput.scrollHeight;
+    }
+
+    function runQuickCmd(cmd) {
+      termInput.value = cmd;
+      executeCommand(cmd);
+      termInput.value = '';
+      termInput.focus();
+    }
+
+    termInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const val = termInput.value.trim();
+        executeCommand(val);
+        termInput.value = '';
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (cmdHistory.length > 0 && historyIdx > 0) {
+          historyIdx--;
+          termInput.value = cmdHistory[historyIdx];
+        }
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (historyIdx < cmdHistory.length - 1) {
+          historyIdx++;
+          termInput.value = cmdHistory[historyIdx];
+        } else {
+          termInput.value = '';
+        }
+      }
+    });
+
+    function executeCommand(rawCmd) {
+      printTerm(`<span class="term-prompt">eminent24@linuxmind</span>:<span class="term-path">~</span>$ ${ escapeHtml(rawCmd) }`);
+      if (!rawCmd) return;
+
+      cmdHistory.push(rawCmd);
+      historyIdx = cmdHistory.length;
+
+      const cmd = rawCmd.toLowerCase().trim();
+
+      if (cmd === 'help') {
+        printTerm(
+`Comandos disponibles en el simulador:
+  <span style="color:var(--neon-green)">ls</span>                  Lista los archivos y carpetas del directorio actual
+  <span style="color:var(--neon-green)">pwd</span>                 Muestra la ruta exacta donde te encuentras (/home/eminent24)
+  <span style="color:var(--neon-green)">whoami</span>              Muestra tu nombre de usuario actual
+  <span style="color:var(--neon-green)">cat bienvenida.txt</span>  Lee el contenido de un archivo de texto
+  <span style="color:var(--neon-green)">mkdir &lt;nombre&gt;</span>      Crea una carpeta nueva
+  <span style="color:var(--neon-green)">uname -a</span>            Muestra la versión del Kernel Linux activo
+  <span style="color:var(--neon-green)">sudo apt update</span>     Simula actualizar los repositorios del sistema
+  <span style="color:var(--neon-green)">puertos</span>             Lista los puertos de red activos (alias de ss -tulpn)
+  <span style="color:var(--neon-green)">clear</span>               Limpia la pantalla de la terminal
+
+Easter Eggs Secretos:
+  <span style="color:var(--neon-purple)">neofetch</span> | <span style="color:var(--neon-purple)">matrix</span> | <span style="color:var(--neon-purple)">hack</span> | <span style="color:var(--neon-purple)">credits</span> | <span style="color:var(--neon-purple)">tux</span> | <span style="color:var(--neon-purple)">sudo rm -rf /</span>`
+        );
+        claimXP('cmd-help', 10, 'Comando help ejecutado');
+      } 
+      else if (cmd === 'ls' || cmd === 'ls -la') {
+        printTerm(virtualFiles.map(f => f.endsWith('/') ? `<span style="color:var(--neon-cyan); font-weight:bold;">${f}</span>` : f).join('   '));
+        claimXP('cmd-ls', 10, 'Archivos listados con ls');
+      } 
+      else if (cmd === 'pwd') {
+        printTerm('/home/eminent24');
+        claimXP('cmd-pwd', 10, 'Ruta verificada con pwd');
+      } 
+      else if (cmd === 'whoami') {
+        printTerm('eminent24 (Operador de LinuxMind Lab)');
+        claimXP('cmd-whoami', 10, 'Identidad verificada con whoami');
+      } 
+      else if (cmd.startsWith('cat ')) {
+        const target = rawCmd.slice(4).trim();
+        if (target === 'bienvenida.txt') {
+          printTerm('¡Felicidades! Acabas de leer tu primer archivo desde la terminal de Linux usando el comando "cat".
+Pista: Prueba a leer "cat secreto_cybermind.txt".', 'var(--neon-green)');
+        } else if (target === 'secreto_cybermind.txt') {
+          printTerm('[ARCHIVO CONFIDENCIAL // THE CYBERMIND LAB]
+"El verdadero poder de Linux no está en memorizar comandos, sino en comprender cómo funciona el sistema." — Eminent24', 'var(--neon-cyan)');
+        } else if (target === 'notas_linux.md') {
+          printTerm('# Apuntes Rápidos
+- Todo en Linux es un archivo.
+- Usa "sudo" solo cuando sepas qué hace el comando.
+- Haz copias de seguridad.', 'var(--text-main)');
+        } else {
+          printTerm(`cat: ${escapeHtml(target)}: No existe el archivo. Usa 'ls' para ver los archivos disponibles.`, 'var(--neon-red)');
+        }
+        claimXP('cmd-cat', 15, 'Archivo leído con cat');
+      } 
+      else if (cmd.startsWith('mkdir ')) {
+        const folder = rawCmd.slice(6).trim();
+        if (folder) {
+          virtualFiles.push(escapeHtml(folder) + '/');
+          printTerm(`[+] Carpeta '${escapeHtml(folder)}/' creada con éxito. Escribe 'ls' para verla.`, 'var(--neon-green)');
+          claimXP('cmd-mkdir', 15, 'Carpeta creada con mkdir');
+        }
+      } 
+      else if (cmd === 'uname -a' || cmd === 'uname') {
+        printTerm('Linux linuxmind-lab 6.12.0-cybermind-amd64 #1 SMP PREEMPT_DYNAMIC x86_64 GNU/Linux', 'var(--neon-cyan)');
+        claimXP('cmd-uname', 10, 'Kernel consultado con uname');
+      } 
+      else if (cmd === 'sudo apt update') {
+        printTerm('Obj:1 https://repo.linuxmind.lab/stable InRelease
+Descargados 148 kB en 0s (920 kB/s)
+Leyendo lista de paquetes... Hecho
+[+] Todos los paquetes están actualizados.', 'var(--neon-green)');
+        claimXP('cmd-apt', 15, 'Repositorios actualizados');
+      } 
+      else if (cmd === 'puertos' || cmd === 'ss -tulpn') {
+        printTerm(
+`Netid  State   Local Address:Port   Process
+tcp    LISTEN  127.0.0.1:8080       node (LinuxMind_Server)
+tcp    LISTEN  0.0.0.0:22           sshd (OpenSSH Seguro)`
+        );
+        claimXP('cmd-puertos', 15, 'Auditoría de puertos ejecutada');
+      } 
+      else if (cmd === 'clear' || cmd === 'cls') {
+        termOutput.innerHTML = '';
+      } 
+      else if (cmd === 'neofetch') {
+        printTerm(
+`<span style="color:var(--neon-green)">        .--.         </span>  <span style="color:var(--neon-cyan); font-weight:bold;">eminent24@linuxmind-lab</span>
+<span style="color:var(--neon-green)">       |o_o |        </span>  -----------------------
+<span style="color:var(--neon-green)">       |:_/ |        </span>  <span style="color:var(--neon-amber)">OS:</span> LinuxMind Lab OS x86_64
+<span style="color:var(--neon-green)">      //   \ \       </span>  <span style="color:var(--neon-amber)">Host:</span> The CyberMind Lab Workstation
+<span style="color:var(--neon-green)">     (|     | )      </span>  <span style="color:var(--neon-amber)">Kernel:</span> 6.12.0-cybermind
+<span style="color:var(--neon-green)">    /'\_   _/\`\      </span>  <span style="color:var(--neon-amber)">Shell:</span> bash 5.2.32
+<span style="color:var(--neon-green)">    \___)=(___/      </span>  <span style="color:var(--neon-amber)">Author:</span> Eminent24
+                       <span style="color:var(--neon-amber)">Status:</span> 100% Open Source &amp; Ready`
+        );
+        claimXP('ee-neofetch', 20, 'Easter Egg: neofetch descubierto');
+      } 
+      else if (cmd === 'credits' || cmd === 'autor') {
+        printTerm(
+`<span style="color:var(--neon-cyan)">╔══════════════════════════════════════════════════════════════╗
+║  🚀 LINUXMIND LAB // CRÉDITOS OFICIALES                      ║
+╠══════════════════════════════════════════════════════════════╣
+║  • Desarrollado por: Eminent24                               ║
+║  • Comunidad:        The CyberMind Lab                       ║
+║  • Misión:           Enseñar Linux y Ciberseguridad desde 0  ║
+╚══════════════════════════════════════════════════════════════╝</span>`
+        );
+        claimXP('ee-credits', 20, 'Easter Egg: Créditos desbloqueados');
+      } 
+      else if (cmd === 'tux') {
+        printTerm(
+`<span style="color:var(--neon-amber)">   _~_
+  (o o)   "Recuerda: En Linux tú eres dueño de tu sistema,
+ /  V  \   nunca al revés." — Tux
+/(  _  )\
+  ^^ ^^</span>`
+        );
+        claimXP('ee-tux', 15, 'Easter Egg: Tux invocado');
+      } 
+      else if (cmd === 'hack' || cmd === 'nmap') {
+        printTerm('[*] Iniciando simulación de reconocimiento ético en laboratorio local...', 'var(--neon-cyan)');
+        setTimeout(() => printTerm('[+] Escaneando host 10.10.14.24 (Nmap Stealth Scan)...', 'var(--neon-green)'), 300);
+        setTimeout(() => printTerm('[+] Puerto 22/tcp ABIERTO (OpenSSH) | Puerto 443/tcp ABIERTO (HTTPS)', 'var(--neon-green)'), 700);
+        setTimeout(() => printTerm('[!] Auditoría finalizada: Sistema protegido por el firewall de Eminent24.', 'var(--neon-amber)'), 1100);
+        claimXP('ee-hack', 20, 'Easter Egg: Escaneo ético ejecutado');
+      } 
+      else if (cmd === 'matrix') {
+        printTerm('[+] Activando protocolo Matrix Digital Rain...', 'var(--neon-green)');
+        startMatrixRain();
+        claimXP('ee-matrix', 25, 'Easter Egg: Modo Matrix activado');
+      } 
+      else if (cmd.includes('rm -rf /')) {
+        printTerm(
+`<span style="color:var(--neon-red); font-weight:bold;">[ALERTA CRÍTICA SIMULADA] ¡Cuidado!</span>
+El comando <span style="color:var(--neon-amber)">sudo rm -rf /</span> da la orden de borrar absolutamente todos los archivos del sistema raíz sin pedir confirmación.
+Menos mal que estás en el simulador seguro de <strong>LinuxMind Lab</strong>. ¡Nunca ejecutes ese comando en una máquina real!`
+        );
+        claimXP('ee-rmrf', 25, 'Easter Egg: Lección anti-desastres aprendida');
+      } 
+      else {
+        printTerm(`bash: ${escapeHtml(rawCmd)}: comando no encontrado. Escribe <span style="color:var(--neon-amber)">help</span> para ver los comandos disponibles.`, 'var(--text-muted)');
+      }
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    }
+
+    // ==========================================
+    // 7. MATRIX CANVAS EASTER EGG
+    // ==========================================
+    let matrixInterval = null;
+    function startMatrixRain() {
+      const canvas = document.getElementById('matrix-canvas');
+      const msg = document.getElementById('matrix-overlay-msg');
+      canvas.style.display = 'block';
+      msg.style.display = 'block';
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const chars = '01LINUXMINDLABEMINENT24CYBERMIND#$%&*+<>?';
+      const fontSize = 16;
+      const columns = Math.floor(canvas.width / fontSize);
+      const drops = Array(columns).fill(1);
+
+      clearInterval(matrixInterval);
+      matrixInterval = setInterval(() => {
+        ctx.fillStyle = 'rgba(7, 11, 16, 0.08)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#00ff9d';
+        ctx.font = fontSize + 'px monospace';
+
+        for (let i = 0; i < drops.length; i++) {
+          const text = chars[Math.floor(Math.random() * chars.length)];
+          ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+          if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+            drops[i] = 0;
+          }
+          drops[i]++;
+        }
+      }, 35);
+
+      const stopMatrix = () => {
+        clearInterval(matrixInterval);
+        canvas.style.display = 'none';
+        msg.style.display = 'none';
+      };
+      canvas.onclick = stopMatrix;
+      msg.onclick = stopMatrix;
+    }
+
+    // ==========================================
+    // 8. MÓDULO 6: DESAFÍO FINAL (QUIZ)
+    // ==========================================
+    const quizQuestions = [
+      {
+        q: "1. ¿Cuál es el método 100% seguro para probar Linux dentro de una ventana en Windows sin modificar tus particiones?",
+        options: [
+          "Borrar System32",
+          "Usar una Máquina Virtual (como VirtualBox)",
+          "Ejecutar sudo rm -rf /",
+          "Formatear el disco duro principal"
+        ],
+        correct: 1,
+        explanation: "¡Correcto! Una Máquina Virtual crea una computadora simulada y aislada dentro de tu sistema actual con 0% de riesgo."
+      },
+      {
+        q: "2. ¿Cómo se llama el componente central de Linux que comunica directamente el hardware con el software?",
+        options: [
+          "El Protector de Pantalla",
+          "El Kernel (Núcleo)",
+          "El Navegador Web",
+          "La Carpeta /home"
+        ],
+        correct: 1,
+        explanation: "¡Exacto! El Kernel de Linux es el motor que gestiona el procesador, la memoria RAM y los dispositivos."
+      },
+      {
+        q: "3. En Windows todo empieza en C:\. ¿Cuál es el símbolo del Directorio Raíz donde nace todo en Linux?",
+        options: [
+          "/ (Barra diagonal o Root Slash)",
+          "Z:\",
+          "$HOME",
+          "#ADMIN"
+        ],
+        correct: 0,
+        explanation: "¡Muy bien! En Linux todo el árbol de archivos parte de una única raíz representada por '/'."
+      },
+      {
+        q: "4. ¿Qué distribución es famosa por venir equipada con cientos de herramientas para Ciberseguridad y Hacking Ético?",
+        options: [
+          "Windows XP",
+          "Kali Linux",
+          "MS-DOS",
+          "Android TV"
+        ],
+        correct: 1,
+        explanation: "¡Correcto! Kali Linux es el estándar en laboratorios de auditoría y pruebas de penetración."
+      },
+      {
+        q: "5. ¿Para qué sirve el comando 'ls' en la terminal de Linux?",
+        options: [
+          "Apagar el monitor",
+          "Listar los archivos y carpetas del directorio donde estás",
+          "Formatear la tarjeta gráfica",
+          "Cambiar la contraseña del Wi-Fi"
+        ],
+        correct: 1,
+        explanation: "¡Excelente! 'ls' (list) te muestra al instante qué archivos y carpetas hay en tu ubicación actual."
+      }
+    ];
+
+    let currentQuizIdx = 0;
+    let quizScore = 0;
+
+    function renderQuiz() {
+      const box = document.getElementById('quiz-container');
+      if (currentQuizIdx < quizQuestions.length) {
+        const item = quizQuestions[currentQuizIdx];
+        box.innerHTML = `
+          <div style="display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:0.82rem; color:var(--neon-cyan); margin-bottom:10px;">
+            <span>PREGUNTA ${currentQuizIdx + 1} DE ${quizQuestions.length}</span>
+            <span>PUNTAJE: ${quizScore} / ${quizQuestions.length}</span>
+          </div>
+          <h3 style="color:var(--text-main); margin-bottom:18px;">${item.q}</h3>
+          <div id="quiz-opts">
+            ${item.options.map((opt, idx) => `<button class="quiz-option" onclick="checkQuizAnswer(${idx}, this)">${opt}</button>`).join('')}
+          </div>
+          <div id="quiz-feedback" style="margin-top:14px;"></div>
+        `;
+      } else {
+        box.innerHTML = `
+          <div style="text-align:center; padding:16px;">
+            <div style="font-size:3rem; margin-bottom:10px;">🏆</div>
+            <h3 style="color:var(--neon-green); font-size:1.5rem;">¡Desafío Completado!</h3>
+            <p style="color:var(--text-main); margin:10px 0 20px;">Obtuviste <strong>${quizScore} de ${quizQuestions.length}</strong> respuestas correctas en LinuxMind Lab.</p>
+            <button class="btn btn-primary" onclick="restartQuiz()">Reintentar Desafío</button>
+          </div>
+        `;
+      }
+    }
+
+    function checkQuizAnswer(selectedIdx, btnEl) {
+      const item = quizQuestions[currentQuizIdx];
+      const buttons = document.querySelectorAll('.quiz-option');
+      buttons.forEach(b => b.disabled = true);
+
+      const feedback = document.getElementById('quiz-feedback');
+      if (selectedIdx === item.correct) {
+        btnEl.classList.add('correct');
+        quizScore++;
+        claimXP('quiz-q-' + currentQuizIdx, 25, 'Respuesta correcta en el Quiz');
+        feedback.innerHTML = `<p style="color:var(--neon-green); font-weight:600;">✔ ${item.explanation}</p>`;
+      } else {
+        btnEl.classList.add('wrong');
+        buttons[item.correct].classList.add('correct');
+        feedback.innerHTML = `<p style="color:var(--neon-amber);">✖ Casi. ${item.explanation}</p>`;
+      }
+
+      feedback.innerHTML += `<button class="btn btn-outline" style="margin-top:14px;" onclick="nextQuizQuestion()">Siguiente ➔</button>`;
+    }
+
+    function nextQuizQuestion() {
+      currentQuizIdx++;
+      renderQuiz();
+    }
+
+    function restartQuiz() {
+      currentQuizIdx = 0;
+      quizScore = 0;
+      renderQuiz();
+    }
+
+    // ==========================================
+    // 9. DESCARGAR APP OFFLINE (.HTML)
+    // ==========================================
+    function downloadOfflineApp() {
+      const htmlSource = "<!DOCTYPE html>
+" + document.documentElement.outerHTML;
+      const blob = new Blob([htmlSource], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "LinuxMind_Lab.html";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      claimXP('download-offline', 15, 'Copia Offline descargada');
+    }
+
+    // Inicializar vistas por defecto
+    window.addEventListener('DOMContentLoaded', () => {
+      selectMethod('liveusb');
+      showLayer('kernel');
+      showFolder('root_slash');
+      renderWizard();
+      renderQuiz();
+    });
+  </script>
+</body>
+</html>
